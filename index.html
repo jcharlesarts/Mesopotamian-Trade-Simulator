@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesopotamian Economy</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow: hidden; }
+    canvas { image-rendering: auto; }
+    #ui-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      text-align: center;
+      line-height: 40px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      display: none;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Mesopotamian Economy</h1>
+  </div>
+  <div id="menu-screen">
+    <h2 style="margin-bottom:1rem; font-size:1.4rem;">🛶 Welcome to Mesopotamian Trade Adventure!</h2>
+    <p style="max-width: 600px; padding: 0 1rem; text-align: center;">
+      You are a merchant in Sumer, the cradle of civilization in ancient Mesopotamia.
+      The Sumerians are among the first to invent <strong>written language</strong> (cuneiform),
+      <strong>wheeled transport</strong>, and <strong>irrigated agriculture</strong>.
+      They were also pioneers in mathematics, city planning, and trade networks.<br><br>
+      Quickly now! You must load your caravan, pick up and deliver goods across the fertile crescent,
+      and complete your network of ancient trade routes to become the greatest merchant in Mesopotamia.
+    </p>
+    <button id="start-button">Start Trading!</button>
+  </div>
+  <div class="game-layout">
+    <canvas id="gameCanvas" width="640" height="640"></canvas>
+    <!--
+    <div id="scorebar" class="scorebar">
+      <div class="score-left">
+        <span class="coin">🪙</span>
+        <span id="gold-amount">0</span>
+        <span class="unit">gold</span>
+      </div>
+      <div class="score-right">
+        <span>Earned: <strong id="gold-earned">0</strong></span>
+        <span class="sep">•</span>
+        <span>Lost: <strong id="gold-lost">0</strong></span>
+      </div>
+    </div>
+    -->
+    <div id="gold-counter-box">
+      <div>Total Gold: <span id="gold-total">0</span></div>
+      <div>Collected: <span id="gold-collected">0</span></div>
+      <div>Lost: <span id="gold-lost">0</span></div>
+    </div>
+    <aside id="sidebar">
+      <div class="sidebar-panel" id="panel-controls">
+        <div class="panel-header">
+          <h3>Controls</h3>
+          <button class="panel-toggle" data-target="panel-controls" aria-expanded="true">Hide</button>
+        </div>
+        <div class="panel-body">
+          <ul class="controls-list">
+          <li><code>Arrow Keys / WASD</code> move</li>
+          <li><code>Q</code> drop cargo (speed boost)</li>
+          <li><code>L</code> toggle event log</li>
+          <li><code>K</code> trigger swarm (debug)</li>
+          <li><code>B</code> spawn bandits (debug)</li>
+          <li><code>C</code> spawn caravans +2 (debug)</li>
+          <li><code>X</code> clear caravans (debug)</li>
+          <li><code>H</code> hazard focus toggle (debug)</li>
+          <li>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="toggle-atmo" checked />
+              <span>Atmosphere overlay (<code>A</code>)</span>
+            </label>
+          </li>
+          <li>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="toggle-network" />
+              <span>Show Trade Network (<code>N</code>)</span>
+            </label>
+          </li>
+          </ul>
+        </div>
+      </div>
+      <div class="sidebar-panel" id="panel-eventlog">
+        <div class="panel-header">
+          <h3>Event Log</h3>
+          <button class="panel-toggle" data-target="panel-eventlog" aria-expanded="true">Hide</button>
+        </div>
+        <div class="panel-body">
+          <ul id="event-log-list" class="event-log"></ul>
+        </div>
+      </div>
+      <div class="sidebar-panel" id="panel-legend">
+        <div class="panel-header">
+          <h3>Legend</h3>
+          <button class="panel-toggle" data-target="panel-legend" aria-expanded="true">Hide</button>
+        </div>
+        <div class="panel-body">
+          <ul class="legend-list">
+          <li>
+            <span class="swatch" style="background: rgba(255,170,0,0.3);"></span>
+            Completed Routes (faint dashed)
+          </li>
+          <li>
+            <span class="swatch glow"></span>
+            Trade Network (high-contrast, N)
+          </li>
+          <li>
+            <span class="swatch" style="background:#cc3333;"></span>
+            Raiders / Skirmishers
+          </li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <div id="ui-panel"></div>
+  <script src="game.js"></script>
+</body>
+</html>
