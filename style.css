@@ -89,6 +89,48 @@ canvas {
   height: auto;
 }
 
+/* Touch joystick (shown on coarse pointers only) */
+#joystick {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 140px;
+  height: 140px;
+  display: none; /* default hidden on desktop */
+  z-index: 20;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none; /* allow preventDefault on touchmove */
+}
+#joystick .joy-base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.18);
+  border: 2px solid rgba(255,255,255,0.35);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+}
+#joystick .joy-stick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid rgba(0,0,0,0.35);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+/* Show joystick on touch-only devices */
+@media (hover: none) and (pointer: coarse) {
+  #joystick { display: block; }
+}
+
 #menu-screen {
   display: flex;
   flex-direction: column;
