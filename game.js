@@ -31,6 +31,14 @@ if (canvas) {
   });
 }
 
+// --- Virtual Joystick state (for touch devices) ---
+let joystickActive = false;
+let joystickDX = 0;
+let joystickDY = 0;
+let joystickCenter = { x: 0, y: 0 };
+let joystickRadius = 0; // pixels
+let joystickTouchId = null;
+
 const MAP_WIDTH = 30;
 const MAP_HEIGHT = 20;
 const TILE_SIZE = 24; // fixed tile size for better alignment
@@ -903,6 +911,29 @@ function getWindVector(tSec) {
   return { x: sx, y: sy };
 }
 
+// Shared movement attempt for keyboard/joystick
+function attemptMove(dx, dy) {
+  const now = Date.now();
+  const moveCooldown = getMoveCooldown();
+  if (now - lastMoveTime < moveCooldown) return false;
+
+  const newX = player.x + dx;
+  const newY = player.y + dy;
+  if (newX < 0 || newX >= MAP_WIDTH || newY < 0 || newY >= MAP_HEIGHT) return false;
+  // If unladen, avoid stepping onto an occupied swarm tile
+  if (!player.cargo && isArmyAt(newX, newY)) {
+    showTempMessage("Raiders ahead — find another route.", 'warning');
+    return false;
+  }
+  player.x = newX;
+  player.y = newY;
+  akkadArmy.ravageStep++;
+  playerDidMove();
+  lastMoveTime = now;
+  checkLocation();
+  return true;
+}
+
 document.addEventListener('keydown', (e) => {
   const keys = {
     ArrowUp:    { dx: 0, dy: -1 },
@@ -1018,30 +1049,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  const now = Date.now();
-  const moveCooldown = getMoveCooldown();
-  if (now - lastMoveTime < moveCooldown) return;
-
   if (keys[e.key]) {
     e.preventDefault();
     const move = keys[e.key];
-    const newX = player.x + move.dx;
-    const newY = player.y + move.dy;
-    if (newX >= 0 && newX < MAP_WIDTH && newY >= 0 && newY < MAP_HEIGHT) {
-      // If unladen, avoid stepping onto an occupied swarm tile
-      if (!player.cargo && isArmyAt(newX, newY)) {
-        showTempMessage("Raiders ahead — find another route.", 'warning');
-        return;
-      }
-      player.x = newX;
-      player.y = newY;
-      // Advance ravage fade timeline with player movement too
-      akkadArmy.ravageStep++;
-      playerDidMove();
-      lastMoveTime = now;
-      checkLocation();
-      render();
-    }
+    if (attemptMove(move.dx, move.dy)) render();
   }
 });
 
@@ -2975,6 +2986,10 @@ function gameLoop() {
   if (npcSpawnCooldown > 0) npcSpawnCooldown--;
   if (npcSnipeCooldown > 0) npcSnipeCooldown--;
   updateNPCTraders();
+  // Apply joystick intent (respects movement cooldown)
+  if (joystickDX !== 0 || joystickDY !== 0) {
+    attemptMove(joystickDX, joystickDY);
+  }
   render();
   requestAnimationFrame(gameLoop);
 }
@@ -2984,6 +2999,8 @@ iconImg.onload = () => {
   const startBtn = document.getElementById("start-button");
   const networkToggle = document.getElementById('toggle-network');
   const atmoToggle = document.getElementById('toggle-atmo');
+  const joystickEl = document.getElementById('joystick');
+  if (joystickEl) initJoystick(joystickEl);
   // Sidebar panel toggles
   const panelToggles = document.querySelectorAll('.panel-toggle');
   panelToggles.forEach(btn => {
@@ -3042,6 +3059,114 @@ iconImg.onload = () => {
     });
   }
 };
+
+// Initialize on-screen joystick for touch devices
+function initJoystick(rootEl) {
+  const knob = rootEl.querySelector('.joy-stick');
+  const base = rootEl.querySelector('.joy-base');
+  if (!knob || !base) return;
+  const updateCenter = () => {
+    const r = rootEl.getBoundingClientRect();
+    joystickCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    joystickRadius = Math.min(r.width, r.height) * 0.5;
+  };
+  updateCenter();
+  window.addEventListener('resize', updateCenter);
+
+  const setKnob = (dx, dy) => {
+    // position relative to center in element space
+    const r = rootEl.getBoundingClientRect();
+    const cx = r.width / 2;
+    const cy = r.height / 2;
+    knob.style.left = (cx + dx) + 'px';
+    knob.style.top = (cy + dy) + 'px';
+  };
+
+  const toCardinal = (vx, vy) => {
+    const dead = joystickRadius * 0.15; // deadzone
+    const ax = Math.abs(vx);
+    const ay = Math.abs(vy);
+    if (ax < dead && ay < dead) return { dx: 0, dy: 0 };
+    if (ax > ay) return { dx: Math.sign(vx), dy: 0 };
+    return { dx: 0, dy: Math.sign(vy) };
+  };
+
+  const handlePoint = (clientX, clientY) => {
+    const dx = clientX - joystickCenter.x;
+    const dy = clientY - joystickCenter.y;
+    const dist = Math.hypot(dx, dy);
+    const max = joystickRadius - 20; // clamp inside base
+    let cdx = dx, cdy = dy;
+    if (dist > max && dist > 0) {
+      const s = max / dist;
+      cdx = dx * s; cdy = dy * s;
+    }
+    setKnob(cdx, cdy);
+    const dir = toCardinal(dx, dy);
+    joystickDX = dir.dx;
+    joystickDY = dir.dy;
+  };
+
+  const onTouchStart = (e) => {
+    e.preventDefault();
+    if (joystickActive) return;
+    const t = e.changedTouches[0];
+    joystickTouchId = t.identifier;
+    joystickActive = true;
+    handlePoint(t.clientX, t.clientY);
+  };
+  const onTouchMove = (e) => {
+    if (!joystickActive) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joystickTouchId) {
+        e.preventDefault();
+        handlePoint(t.clientX, t.clientY);
+        break;
+      }
+    }
+  };
+  const onTouchEnd = (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joystickTouchId) {
+        e.preventDefault();
+        joystickActive = false;
+        joystickTouchId = null;
+        joystickDX = 0; joystickDY = 0;
+        setKnob(0, 0);
+        break;
+      }
+    }
+  };
+  rootEl.addEventListener('touchstart', onTouchStart, { passive: false });
+  rootEl.addEventListener('touchmove', onTouchMove, { passive: false });
+  rootEl.addEventListener('touchend', onTouchEnd, { passive: false });
+  rootEl.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+  // Optional pointer events support (for browsers that support it)
+  const hasPointer = 'onpointerdown' in window;
+  if (hasPointer) {
+    rootEl.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      e.preventDefault();
+      joystickActive = true;
+      handlePoint(e.clientX, e.clientY);
+    }, { passive: false });
+    window.addEventListener('pointermove', (e) => {
+      if (!joystickActive || e.pointerType !== 'touch') return;
+      e.preventDefault();
+      handlePoint(e.clientX, e.clientY);
+    }, { passive: false });
+    window.addEventListener('pointerup', (e) => {
+      if (!joystickActive || e.pointerType !== 'touch') return;
+      e.preventDefault();
+      joystickActive = false;
+      joystickDX = 0; joystickDY = 0;
+      setKnob(0, 0);
+    }, { passive: false });
+  }
+}
 
 // Utility for showing temporary messages (used by Akkadian swarm)
 function showTempMessage(msg, iconType = null) {
