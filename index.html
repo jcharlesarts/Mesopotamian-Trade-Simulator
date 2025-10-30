@@ -2,11 +2,12 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mesopotamian Economy</title>
   <link rel="stylesheet" href="style.css">
   <style>
     body { overflow: hidden; }
+    body.embedded { overflow: auto !important; }
     canvas { image-rendering: auto; }
     #ui-panel {
       position: fixed;
@@ -25,6 +26,14 @@
       z-index: 5;
     }
   </style>
+  <script>
+    (function(){
+      function isEmbedded(){ return window.self !== window.top || /[?&]embed=1\b/.test(location.search); }
+      document.addEventListener('DOMContentLoaded', function(){
+        if (isEmbedded()) document.body.classList.add('embedded');
+      });
+    })();
+  </script>
 </head>
 <body>
   <div id="app">
