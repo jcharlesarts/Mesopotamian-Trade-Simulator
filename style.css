@@ -84,18 +84,18 @@ canvas {
   background-color: #e6d3af;
   border: 1px solid rgba(68, 47, 25, 0.35);
   image-rendering: auto;
-  /* Let JS control size; avoid implicit shrinking */
-  width: auto;
+  /* Allow responsive shrink inside iframes/containers */
+  max-width: 100%;
   height: auto;
 }
 
 /* Touch joystick (shown on coarse pointers only) */
 #joystick {
   position: fixed;
-  left: 20px;
-  bottom: 20px;
-  width: 140px;
-  height: 140px;
+  left: 24px;
+  bottom: 24px;
+  width: min(28vw, 160px);
+  height: min(28vw, 160px);
   display: none; /* default hidden on desktop */
   z-index: 20;
   -webkit-user-select: none;
@@ -129,6 +129,14 @@ canvas {
 /* Show joystick on touch-only devices */
 @media (hover: none) and (pointer: coarse) {
   #joystick { display: block; }
+}
+
+/* Respect iOS safe areas so the joystick doesn't hug edges */
+@supports (padding: env(safe-area-inset-bottom)) {
+  #joystick {
+    left: calc(24px + env(safe-area-inset-left));
+    bottom: calc(24px + env(safe-area-inset-bottom));
+  }
 }
 
 #menu-screen {
@@ -330,4 +338,10 @@ canvas {
   padding: 8px 10px;
   border-radius: 6px;
   z-index: 5;
+}
+
+/* Stack layout and relax spacing on narrow viewports/iframes */
+@media (max-width: 900px) {
+  .game-layout, .tt-layout { grid-template-columns: 1fr; gap: 12px; padding: 8px; }
+  #sidebar, #tt-sidebar { width: auto; }
 }
