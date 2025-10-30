@@ -3020,9 +3020,7 @@ iconImg.onload = () => {
     // Match drawing buffer to CSS for crisp pixels (no scaling)
     canvas.width = 800;
     canvas.height = 534;
-    const targetCssWidth = 800;
-    canvas.style.width = targetCssWidth + "px";
-    canvas.style.height = ""; // auto from intrinsic (matches buffer)
+    // Let CSS control responsive size; avoid fixed CSS width
     // Layout handled by CSS; no manual margins needed
     // ctx.setTransform(
     //   canvas.width / (TILE_SIZE * MAP_WIDTH),
